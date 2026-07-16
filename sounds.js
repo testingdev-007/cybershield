@@ -1,14 +1,9 @@
-/* ════════════════════════════════════════════════════════════
-   CYBERSHIELD ACADEMY
-   FILE: sounds.js
-   ROLE: sounds.js
-   ════════════════════════════════════════════════════════════ */
 // ============================================================
 // SOUNDS.JS — CyberShield Academy Audio Engine v3
 // Professional workplace sounds + mission-control ambience
 // ============================================================
 
-var SFX = (() => {
+const SFX = (() => {
   let ctx = null;
   let _bgMaster = null;
   let _bgNodes  = [];
@@ -183,11 +178,11 @@ var SFX = (() => {
 
 // Global click/key hooks
 document.addEventListener('keydown', e => {
-  try{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'){
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'){
     if(e.key.length===1||e.key==='Backspace') SFX.keyClick();
-  }}catch(ex){}
+  }
 });
 document.addEventListener('click', e => {
-  try{var btn=e.target.closest('button,.ipeasy,.edb-btn,.brep');
-  if(btn) SFX.btnClick();}catch(ex){}
+  const btn=e.target.closest('button,.ipeasy,.edb-btn,.brep');
+  if(btn) SFX.btnClick();
 });
