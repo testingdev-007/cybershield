@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberShield — Select Edition</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --danger-rgb: 248,81,103;
+  --warn-rgb:   240,169,12;
+  --info-rgb:   86,156,214;
+  --accent-rgb: 122,162,247;
+  --accent:     rgb(var(--accent-rgb));
+  --g:          #3ddc84;
+  --red:        rgb(var(--danger-rgb));
+  --amb:        rgb(var(--warn-rgb));
+  --bg:         #0b0f17;
+  --bp:         #121823;
+  --panel:      #121823;
+  --bdr:        #232c3d;
+  --bdr-soft:   #1a212e;
+  --ink:        #d6deec;
+  --ink-2:      #9aa6bd;
+  --ink-3:      #5c6678;
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── subtle grid background ── */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background-image:
+    linear-gradient(rgba(122,162,247,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122,162,247,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── top status bar ── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  background: var(--bp);
+  border-bottom: 1px solid var(--bdr);
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 16px;
+  z-index: 10;
+}
+
+.topbar-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: .5px;
+  color: var(--accent);
+}
+
+.topbar-sep { color: var(--bdr); font-size: 18px; }
+
+.topbar-tag {
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: .05em;
+}
+
+.topbar-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  background: rgba(var(--accent-rgb),.08);
+  border: 1px solid var(--bdr-soft);
+  padding: 3px 10px;
+  border-radius: 4px;
+  letter-spacing: .05em;
+}
+
+/* ── main layout ── */
+.page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 88px 24px 48px;
+}
+
+/* ── hero ── */
+.hero {
+  text-align: center;
+  margin-bottom: 56px;
+  max-width: 560px;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.hero-eyebrow::before,
+.hero-eyebrow::after {
+  content: '';
+  height: 1px;
+  width: 36px;
+  background: rgba(var(--accent-rgb),.3);
+}
+
+.hero-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -.5px;
+  line-height: 1.1;
+  margin-bottom: 14px;
+}
+
+.hero-title span {
+  color: var(--accent);
+}
+
+.hero-sub {
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 1.65;
+}
+
+/* ── choice cards ── */
+.cards {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  max-width: 1000px;
+  align-items: stretch;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--bdr);
+  border-radius: 12px;
+  padding: 32px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s, transform .15s;
+  animation: cardIn .5s ease both;
+  cursor: pointer;
+}
+
+.card:first-child { animation-delay: .1s; }
+.card:nth-child(2) { animation-delay: .2s; }
+.card:nth-child(3) { animation-delay: .3s; }
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+  opacity: .7;
+  transition: opacity .2s;
+}
+
+.card-standard::before { background: var(--g); }
+.card-advanced::before { background: var(--accent); }
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+}
+
+.card-standard:hover { border-color: var(--g); }
+.card-advanced:hover { border-color: var(--accent); }
+
+.card:hover::before { opacity: 1; }
+
+/* card content */
+.card-icon {
+  font-size: 28px;
+  margin-bottom: 18px;
+  line-height: 1;
+}
+
+.card-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.card-standard .card-label { color: var(--g); }
+.card-advanced .card-label { color: var(--accent); }
+
+.card-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 12px;
+  letter-spacing: -.2px;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.65;
+  flex: 1;
+  margin-bottom: 28px;
+}
+
+.card-features {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 28px;
+}
+
+.feat {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.feat-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.card-standard .feat-dot { background: var(--g); }
+.card-advanced .feat-dot { background: var(--accent); }
+
+.card-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  border: 1px solid;
+  transition: background .15s;
+  margin-top: auto;
+}
+
+.card-standard .card-btn {
+  color: var(--g);
+  border-color: rgba(61,220,132,.35);
+  background: rgba(61,220,132,.06);
+}
+
+.card-standard:hover .card-btn {
+  background: rgba(61,220,132,.14);
+}
+
+.card-advanced .card-btn {
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb),.35);
+  background: rgba(var(--accent-rgb),.06);
+}
+
+.card-advanced:hover .card-btn {
+  background: rgba(var(--accent-rgb),.14);
+}
+
+.btn-arrow {
+  font-size: 16px;
+  transition: transform .15s;
+}
+
+.card:hover .btn-arrow { transform: translateX(3px); }
+
+/* ── footer note ── */
+.footnote {
+  margin-top: 40px;
+  font-size: 11px;
+  color: var(--ink-3);
+  text-align: center;
+  font-family: var(--font-mono);
+  letter-spacing: .04em;
+}
+
+/* ── responsive ── */
+@media (max-width: 600px) {
+  .cards { flex-direction: column; max-width: 400px; }
+  .hero-title { font-size: 30px; }
+}
+/* ── terminal card (amber — emergency/fallback) ── */
+.card-terminal::before { background: var(--amb); }
+.card-terminal .card-label { color: var(--amb); }
+.card-terminal .feat-dot { background: var(--amb); }
+.card-terminal:hover { border-color: var(--amb); }
+.card-terminal .card-btn {
+  color: var(--amb);
+  border-color: rgba(240,169,12,.35);
+  background: rgba(240,169,12,.06);
+}
+.card-terminal:hover .card-btn { background: rgba(240,169,12,.14); }
+
+/* ── video section ── */
+.video-section {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 40px;
+}
+.section-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--bdr);
+}
+.vcard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--panel);
+  border: 1px solid var(--bdr);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s, background .15s;
+}
+.vcard:hover {
+  border-color: rgba(var(--accent-rgb),.5);
+  background: rgba(var(--accent-rgb),.04);
+}
+.vcard-play {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb),.1);
+  border: 1px solid rgba(var(--accent-rgb),.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: background .15s;
+}
+.vcard:hover .vcard-play {
+  background: rgba(var(--accent-rgb),.2);
+}
+.vcard-body { flex: 1; min-width: 0; }
+.vcard-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.vcard-desc {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+}
+.vcard-arrow {
+  color: var(--ink-3);
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: color .15s, transform .15s;
+}
+.vcard:hover .vcard-arrow {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+
+@media (max-width: 600px) {
+  .cards { flex-direction: column; max-width: 400px; }
+  .card-terminal { flex: unset; width: 100%; }
+  .hero-title { font-size: 30px; }
+}
+/* ── resource sections ── */
+.resource-section {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 32px;
+}
+
+/* ── resource cards (3-up grid) ── */
+.rcards {
+  display: flex;
+  gap: 12px;
+}
+.rcard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 14px;
+  background: var(--panel);
+  border: 1px solid var(--bdr);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  text-align: center;
+  transition: border-color .15s, background .15s, transform .12s;
+}
+.rcard:hover {
+  border-color: rgba(var(--accent-rgb),.5);
+  background: rgba(var(--accent-rgb),.04);
+  transform: translateY(-2px);
+}
+.rcard-icon {
+  font-size: 22px;
+  line-height: 1;
+  filter: grayscale(.4);
+}
+.rcard-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rcard-sub {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+}
+
+@media (max-width: 480px) {
+  .rcards { flex-direction: column; }
+}
+
+
+
+
+
+  to   { opacity: 1; -webkit-transform: scale(1); }
+}
+
+  to   { opacity: 1; transform: scale(1); }
+}
+
+
+
+
+
+
+
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">CYBERSHIELD</div>
+  <div class="topbar-sep">|</div>
+  <div class="topbar-tag">Select Edition</div>
+  <div class="topbar-badge">OCR H446 · A LEVEL</div>
+</div>
+
+<main class="page">
+
+  <div class="hero">
+    <div class="hero-eyebrow">Incident Response Simulation</div>
+    <h1 class="hero-title">Choose your <span>edition</span></h1>
+    <p class="hero-sub">
+      Both editions simulate a live Security Operations Centre environment
+      and align to the OCR H446 specification.
+    </p>
+  </div>
+
+  <div class="cards">
+
+    <!-- STANDARD -->
+    <a href="#" class="card card-standard">
+      <div class="card-icon">🛡</div>
+      <div class="card-label">Standard Edition</div>
+      <h2 class="card-title">CyberShield</h2>
+      <p class="card-desc">
+        Foundation and Standard difficulty. Guided pre-brief questions,
+        plain-English context on every alert, and structured team hints
+        when you need them.
+      </p>
+      <div class="card-features">
+        <div class="feat"><span class="feat-dot"></span>Adaptive pre-brief diagnostic</div>
+        <div class="feat"><span class="feat-dot"></span>Plain-English context on all cards</div>
+        <div class="feat"><span class="feat-dot"></span>SOC team hints when stuck</div>
+        <div class="feat"><span class="feat-dot"></span>Full debrief with exam quiz</div>
+      </div>
+      <div class="card-btn">Launch Standard <span class="btn-arrow">→</span></div>
+    </a>
+
+    <!-- ADVANCED -->
+    <a href="#" class="card card-advanced">
+      <div class="card-icon">⚡</div>
+      <div class="card-label">Advanced Edition</div>
+      <h2 class="card-title">CyberShield: A‑Level</h2>
+      <p class="card-desc">
+        Foundation through Advanced difficulty. Pre-brief performance
+        unlocks harder case mixes, reduced scaffolding, and raw data
+        cards for analysts who can work from the evidence alone.
+      </p>
+      <div class="card-features">
+        <div class="feat"><span class="feat-dot"></span>Three adaptive difficulty tiers</div>
+        <div class="feat"><span class="feat-dot"></span>Context scales with pre-brief score</div>
+        <div class="feat"><span class="feat-dot"></span>Advanced tier: raw data only</div>
+        <div class="feat"><span class="feat-dot"></span>7 modules · 105 exam questions</div>
+      </div>
+      <div class="card-btn">Launch Advanced <span class="btn-arrow">→</span></div>
+    </a>
+
+    <!-- TERMINAL BACKUP -->
+    <a href="#" class="card card-terminal">
+      <div class="card-icon">⚡</div>
+      <div class="card-label">Emergency Access</div>
+      <h2 class="card-title">System Terminal Backup</h2>
+      <p class="card-desc">
+        Basic terminal environment for emergency use. Available when
+        primary simulation systems are unavailable.
+      </p>
+      <div class="card-features">
+        <div class="feat"><span class="feat-dot"></span>Minimal interface</div>
+        <div class="feat"><span class="feat-dot"></span>No dependency on main app</div>
+        <div class="feat"><span class="feat-dot"></span>Emergency fallback only</div>
+      </div>
+      <div class="card-btn">Launch Terminal <span class="btn-arrow">→</span></div>
+    </a>
+
+  </div><!-- /cards -->
+
+  <!-- VIDEO GUIDES -->
+  <div class="resource-section">
+    <div class="section-label">Video Guides</div>
+
+    <a href="#" class="vcard">
+      <div class="vcard-play">▶</div>
+      <div class="vcard-body">
+        <div class="vcard-title">Intro</div>
+        <div class="vcard-desc">Introduction to CyberShield</div>
+      </div>
+      <div class="vcard-arrow">→</div>
+    </a>
+
+    <a href="#" class="vcard">
+      <div class="vcard-play">▶</div>
+      <div class="vcard-body">
+        <div class="vcard-title">Logic Grid</div>
+        <div class="vcard-desc">How to work through the investigation grid</div>
+      </div>
+      <div class="vcard-arrow">→</div>
+    </a>
+
+    <a href="#" class="vcard">
+      <div class="vcard-play">▶</div>
+      <div class="vcard-body">
+        <div class="vcard-title">End 1</div>
+        <div class="vcard-desc">End of session walkthrough — part one</div>
+      </div>
+      <div class="vcard-arrow">→</div>
+    </a>
+
+    <a href="#" class="vcard">
+      <div class="vcard-play">▶</div>
+      <div class="vcard-body">
+        <div class="vcard-title">End 2</div>
+        <div class="vcard-desc">End of session walkthrough — part two</div>
+      </div>
+      <div class="vcard-arrow">→</div>
+    </a>
+
+  </div><!-- /video guides -->
+
+  <!-- RESOURCES -->
+  <div class="resource-section">
+    <div class="section-label">Resources</div>
+
+    <div class="rcards">
+
+      <a href="#" class="rcard">
+        <div class="rcard-icon">🔑</div>
+        <div class="rcard-title">Decoder</div>
+        <div class="rcard-sub">Reference sheet</div>
+      </a>
+
+      <a href="#" class="rcard">
+        <div class="rcard-icon">⊞</div>
+        <div class="rcard-title">Logic Grid</div>
+        <div class="rcard-sub">Printable worksheet</div>
+      </a>
+
+      <a href="#" class="rcard">
+        <div class="rcard-icon">📋</div>
+        <div class="rcard-title">Data Sheet</div>
+        <div class="rcard-sub">Key terms &amp; spec coverage</div>
+      </a>
+
+    </div>
+  </div><!-- /resources -->
+
+  <p class="footnote">Edit each <code style="font-family:var(--font-mono);font-size:10px;color:var(--ink-3)">href="#"</code> to set your links</p>
+    <video class="vid-player" id="vidPlayer" controls playsinline>
+      Your browser does not support this video format.
+    </video>
+  </div>
+</div>
+
+
+</main>
+
+</body>
+</html>
+
+</body>
+</html>
