@@ -506,7 +506,17 @@ MODULES.sqlInjection = {
         ragAnswer:'R', actionAnswer:'block',
         notes:"UNION-based data exfiltration: the UNION SELECT appends a second query, returning rows from the users table alongside the product results. The attacker is enumerating password hashes and emails. Block source IP and rotate database credentials immediately."
       },
-      {q:'Why is it important for web applications to validate and sanitise all user input before including it in database queries?',options:['Validation improves query speed by reducing the amount of data processed','Unvalidated input can be crafted to change the structure of the SQL query — allowing an attacker to access or destroy data they are not authorised to reach','Validation ensures names and addresses are stored in a consistent format, preventing errors in customer records'],correct:1},
+      {
+        name:'/admin/exec', purpose:'POST — admin command execution endpoint',
+        endpoint:'/admin/exec',
+        method:'POST',
+        submittedValue:"cmd=backup; SELECT table_name FROM information_schema.tables--",
+        serverResponse:'200 OK — query executed; table_name: users, orders, payments, staff_salaries',
+        statusCode:200,
+        ragAnswer:'R', actionAnswer:'block',
+        notes:'SQL injection in an admin endpoint is particularly serious. The submitted input appended SQL to an existing query, and the server returned database schema information — confirming the injection succeeded and the attacker can now enumerate all tables. Admin endpoints with poor input validation are a critical vulnerability: the attacker used a stacked query to run a second SELECT alongside the legitimate command.',
+        reportTeams:{correct:'Development and Security Teams',incorrect:'Finance Department'},
+      },
       {
         name:'/api/v1/user/profile', purpose:'GET — user profile lookup by ID',
         endpoint:'/api/v1/user/profile', inputField:'user_id', submittedValue:"admin' --",
@@ -1381,8 +1391,8 @@ MODULES.malwareAnalysis = {
         name:'network_worm.exe', purpose:'Worm spreading copies of itself to other devices on the network',
         source:'Entered via unpatched vulnerability on one workstation', activity:'Scanning internal network, writing copies to 14 other devices',
         network:'High volume of connections to multiple internal IPs',
-        ragAnswer:'R', actionAnswer:'isolate',
-        notes:'Worm behaviour is defined by self-replication without user action. The spread to 14 other devices means containment must happen immediately. Isolate all affected hosts — not just the source — and patch the vulnerability used to enter.',
+        ragAnswer:'R', actionAnswer:'quarantine',
+        notes:'Worm behaviour is defined by self-replication without user action. Quarantine includes immediately disconnecting the affected device from the network to stop the spread — then removing the malware. The spread to 14 other devices means containment must happen immediately. Isolate all affected hosts — not just the source — and patch the vulnerability used to enter.',
         reportTeams:{correct:'Incident Response Team',incorrect:'HR Department'},
       },
       {
@@ -1422,8 +1432,8 @@ MODULES.malwareAnalysis = {
         name:'macro_runner.exe', purpose:'Macro executing from a document received by email',
         source:'Opened from email attachment Invoice_March.docx', activity:'Script execution, outbound connection to download additional content',
         network:'Single outbound connection to unknown URL on execution',
-        ragAnswer:'A', actionAnswer:'investigate',
-        notes:'Macros in email attachments are a common malware delivery method. This one made a network connection immediately on opening — consistent with a dropper downloading a second stage payload. Investigate whether the download was blocked and what the macro attempted to do.',
+        ragAnswer:'R', actionAnswer:'quarantine',
+        notes:'A macro that executed and immediately made an outbound network connection is an active threat, not a grey area. Quarantine the device and investigate the download destination. Macros in email attachments are a primary malware delivery vector — consistent with a dropper downloading a second stage payload. Investigate whether the download was blocked and what the macro attempted to do.',
         reportTeams:{correct:'Incident Response Team',incorrect:'Procurement Team'},
       },
       {
@@ -1436,7 +1446,7 @@ MODULES.malwareAnalysis = {
       },
       // GREEN — legitimate system processes
       {
-        name:'MsMpEng.exe', purpose:'Windows Defender antivirus running its scheduled weekly scan',
+        name:'MsMpEng.exe', purpose:'MsMpEng.exe — scheduled scan process',
         source:'Built-in Windows security software', activity:'Scanning all files on system drive for known malware signatures',
         network:'No network activity during local scan',
         ragAnswer:'G', actionAnswer:'allow',
@@ -1444,7 +1454,7 @@ MODULES.malwareAnalysis = {
         reportTeams:{correct:'IT Support Team',incorrect:'Incident Response Team'},
       },
       {
-        name:'wuauclt.exe', purpose:'Windows Update downloading this month security patches from Microsoft',
+        name:'wuauclt.exe', purpose:'wuauclt.exe — update acquisition process',
         source:'Automatic Windows Update process', activity:'Downloading patch files from Microsoft update servers',
         network:'Outbound downloads from Microsoft CDN — verified addresses',
         ragAnswer:'G', actionAnswer:'allow',
@@ -1452,7 +1462,7 @@ MODULES.malwareAnalysis = {
         reportTeams:{correct:'IT Support Team',incorrect:'Incident Response Team'},
       },
       {
-        name:'VeeamAgent.exe', purpose:'Veeam backup software copying files to the company backup server',
+        name:'VeeamAgent.exe', purpose:'VeeamAgent.exe — backup agent process',
         source:'Company-approved backup software deployed by IT', activity:'Reading all files on system drive, writing to backup server at 192.168.10.50',
         network:'Outbound file transfers to company backup server',
         ragAnswer:'G', actionAnswer:'allow',
@@ -1661,9 +1671,9 @@ SCENARIO_CONTEXT.malwareAnalysis = {
 'adware_toolbar.exe':"This program arrived as part of a free game download. It has changed the browser homepage and is inserting additional adverts. It is also sending a record of websites visited to an external company.",
 'macro_runner.exe':"A script inside a document received by email started running when the document was opened. Within seconds it made a connection to an external address to download additional content.",
 'unverified_update.exe':"This appears to be an update for installed software, but it came from an unofficial website and has no digital signature from the software developer.",
-'MsMpEng.exe':"The built-in Windows antivirus software is running its scheduled weekly check of all files on the device. CPU usage is high during this process.",
-'wuauclt.exe':"Windows is downloading this month security patches from Microsoft. Files are being downloaded from Microsoft servers and the sizes match the published update list.",
-'VeeamAgent.exe':"The company backup software is copying all files on the system drive to the backup server. This started at 02:00 and matches the scheduled Sunday backup job.",
+'MsMpEng.exe':"MsMpEng.exe is the Windows Defender antivirus engine. It is running its scheduled weekly check of all files on the device. CPU usage is high during this process.",
+'wuauclt.exe':"wuauclt.exe is the Windows Update process. It is downloading this month security patches from Microsoft's update servers.",
+'VeeamAgent.exe':"VeeamAgent.exe is the Veeam backup agent. It is copying all files on the system drive to the company backup server on the scheduled Sunday 02:00 job.",
 };
 // ── STANDARD DIFFICULTY CONTEXT ───────────────────────────────
 // Factual restatement only — no anomaly flags, no significance.

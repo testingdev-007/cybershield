@@ -307,8 +307,8 @@ function clearGlows(){
 }
 function offerHelp(step){
   const hints={
-    1:["Open the alert email — it tells you what type of incident this is.","Click the email in the inbox, then press OPEN ALERT to read it."],
-    2:["Select the investigation tool that matches the incident type described in the email, then click LOAD TOOL.","Re-read the email — the incident type maps directly to the correct tool."],
+    1:["Read your briefing — it tells you what type of incident this is.","Click the email in the inbox, then press OPEN ALERT to read it."],
+    2:["Select the investigation tool that matches the incident type in your briefing.","Re-read your briefing — the incident type maps directly to the correct tool."],
     3:["Work through each item. Consider the key indicators: rate, flags, algorithm, payload or pattern.","Assess each entry against the classification criteria. What makes this item RED, AMBER or GREEN?"],
     4:["Select the appropriate action for each remaining item based on your severity assessment.","Complete the assessment — choose the correct action for each unhandled item."],
   };
@@ -337,7 +337,7 @@ function idleLoop(){
 
 // ── DIFFICULTY ────────────────────────────────────────────────
 function setDiff(v){
-  if(GS.active){gcMsg('priya','Finish the current case before checking for new emails.');return;}
+  if(GS.active){gcMsg('priya','Finish the current case first.');return;}
   GS.maxH=GS.hearts=parseInt(v);rHearts();
 }
 
@@ -355,7 +355,7 @@ function refreshInbox(){
   try{
   try{SFX.newMail();}catch(e){}clearTimeout(GS.autoTimer);
   var _br=document.getElementById('btnRefresh');if(_br)_br.classList.remove('pulse-glow');
-  if(GS.active){gcMsg('priya','Finish the current case before checking for new emails.');return;}
+  if(GS.active){gcMsg('priya','Finish the current case first.');return;}
   // Reset email/results pane for fresh mission
   if(GS.round===0){document.getElementById('welcomeMsg').style.display='block';}
   document.getElementById('emailView').style.display='none';
@@ -688,13 +688,22 @@ function selectInboxEmail(id, email){
   document.querySelectorAll('.eitem').forEach(i=>i.classList.remove('sel'));
   const el=document.querySelector(`[data-eid="${id}"]`);
   if(el){el.classList.add('sel');el.classList.remove('unread');}
-  // Flag email button (report suspicious)
+  // Show report button only for phishing emails
+  var eabBar=document.getElementById('eabBar');
   const btnR=document.getElementById('btnFlagEmail');
-  if(btnR)btnR.disabled=false;
+  if(email&&email.phish){
+    if(eabBar)eabBar.style.display='';
+    if(btnR)btnR.disabled=false;
+  } else {
+    if(eabBar)eabBar.style.display='none';
+    if(btnR)btnR.disabled=true;
+  }
 }
 
 function clearEmailActionBar(){
   GS.selectedEmailId=null;
+  var eabBar=document.getElementById('eabBar');
+  if(eabBar)eabBar.style.display='none';
   const btnR=document.getElementById('btnFlagEmail');
   if(btnR)btnR.disabled=true;
 }
@@ -813,7 +822,7 @@ function loadTool(){
     var wt=document.querySelector('.tool-tile.sel');
     if(wt){wt.classList.remove('sel');wt.classList.add('tt-wrong');setTimeout(function(){wt.classList.remove('tt-wrong');},600);}
     document.getElementById('toolSel').value='';
-    const hint=GS.badTools>=2?'<br><br><em>Hint: re-read the alert email — the incident type indicates the correct tool.</em>':'';
+    const hint=GS.badTools>=2?'<br><br><em>Hint: re-read your briefing — the incident type tells you which tool to use.</em>':'';
     document.getElementById('toolData').innerHTML=`<div class="terr">✗ <strong>${esc(v)}</strong> is not the correct tool for this incident type.${hint}<br><br>Review the email and try again.</div>`;
   }
 }
@@ -834,7 +843,7 @@ var MODULE_LEGENDS = {
 function renderToolData(){
   const id=GS.modId,sc=GS.scenario,cols=MODULE_COLUMNS[id];
   if(!sc||!Array.isArray(sc)){
-    document.getElementById('toolData').innerHTML='<div class="terr">⚠ No scenario data — try refreshing your inbox.</div>';
+    document.getElementById('toolData').innerHTML='<div class="terr">⚠ No scenario data — try reloading the page.</div>';
     console.error('renderToolData: scenario missing for',id,sc);return;
   }
   if(!cols){
@@ -1083,20 +1092,60 @@ function showResults(savedId){
   // ── EXAM QUIZ ──
   var quiz=(pl.quiz||[]).slice();
   for(var i=quiz.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=quiz[i];quiz[i]=quiz[j];quiz[j]=t;}
+  // Sequential quiz — one question at a time, like pre-brief
   var qSel=quiz.slice(0,3);
+  window._dbQ={qs:qSel,idx:0,score:0};
+
+  function _dbShowQ(idx){
+    var qSlot=document.getElementById('dbQuizSlot');
+    if(!qSlot)return;
+    if(idx>=window._dbQ.qs.length){
+      // All done — show score and NEXT CASE
+      var sc=window._dbQ.score;
+      var tot=window._dbQ.qs.length;
+      qSlot.innerHTML='<div class="db-quiz-result" style="margin-top:8px;">'
+        +'<div class="db-qr-score" style="color:'+(sc===tot?'var(--g)':sc>0?'var(--amb)':'var(--red)')+'">'+sc+'/'+tot+' correct</div>'
+        +(sc>0?'<div class="db-qr-xp">+'+(sc*25)+' XP</div>':'')
+        +'</div>'
+        +'<button class="db-submit" style="margin-top:12px;" onclick="_nextCase()">NEXT CASE &rarr;</button>';
+      return;
+    }
+    var q=window._dbQ.qs[idx];
+    var qEl='<div class="db-q-text" style="margin-bottom:8px;"><span class="db-q-num">Q'+(idx+1)+'/'+window._dbQ.qs.length+'</span>'+esc(q.q)+'</div>';
+    var opts=q.options.map(function(opt,oi){
+      return '<button class="db-q-opt" onclick="window._dbQAns('+oi+','+q.correct+')">'+esc(opt)+'</button>';
+    }).join('');
+    qSlot.innerHTML=qEl+opts;
+  }
+
+  window._dbQAns=function(chosen,correct){
+    var qSlot=document.getElementById('dbQuizSlot');
+    if(!qSlot)return;
+    var isRight=(chosen===correct);
+    if(isRight)window._dbQ.score++;
+    // Style buttons
+    qSlot.querySelectorAll('.db-q-opt').forEach(function(b,bi){
+      b.disabled=true;b.onclick=null;
+      if(bi===correct)b.classList.add('pbo-ok');
+      else if(bi===chosen&&!isRight)b.classList.add('pbo-err');
+      else b.classList.add('pbo-dim');
+    });
+    // Show feedback then advance
+    var fb=document.createElement('div');
+    fb.className='db-q-fb';
+    fb.style.cssText='margin-top:8px;font-size:13px;color:'+(isRight?'var(--g)':'var(--red)')+';';
+    var hint=q.hint||(isRight?'Correct.':'The correct answer was: '+q.options[correct]);
+    fb.textContent=(isRight?'✓ ':'✗ ')+hint;
+    qSlot.appendChild(fb);
+    setTimeout(function(){
+      window._dbQ.idx++;
+      _dbShowQ(window._dbQ.idx);
+    },1400);
+  };
+
   if(qSel.length){
     h+='<div class="db-sec-lbl">EXAM PRACTICE</div>';
-    h+='<div class="db-quiz" id="dbQuiz">';
-    qSel.forEach(function(q,qi){
-      h+='<div class="db-q" id="dbQ'+qi+'">';
-      h+=  '<div class="db-q-text"><span class="db-q-num">Q'+(qi+1)+'</span>'+esc(q.q)+'</div>';
-      q.options.forEach(function(opt,oi){
-        h+='<button class="db-q-opt" data-qi="'+qi+'" data-oi="'+oi+'" onclick="_dbQuizPick('+qi+','+oi+','+q.correct+')">'+esc(opt)+'</button>';
-      });
-      h+='</div>';
-    });
-    h+='</div>';
-    h+='<button class="db-submit" id="dbSubmit" onclick="_dbQuizSubmit('+qSel.length+')">SUBMIT EXAM ANSWERS</button>';
+    h+='<div id="dbQuizSlot" style="margin-bottom:8px;"></div>';
   }
 
   h+='<div id="dbEndSlot"></div>';
@@ -1104,6 +1153,8 @@ function showResults(savedId){
 
   document.getElementById('resultsView').innerHTML=h;
   showTab('R');
+  // Start sequential quiz
+  if(window._dbQ&&window._dbQ.qs.length) _dbShowQ(0);
 
   // ── interaction state ──
   window._dbQuizAns={};
@@ -1231,13 +1282,13 @@ function resetAll(){
   resetTool();clearGlows();
   document.getElementById('toolSel').value='';
   var tgr=document.getElementById('toolGrid');
-  if(tgr)tgr.innerHTML='<div class="tt-placeholder">📧 Open an alert email to reveal available tools</div>';
+  if(tgr)tgr.innerHTML='<div class="tt-placeholder">📋 Read your briefing, then select the investigation tool above.</div>';
   var tp=document.getElementById('toolPanel');if(tp)tp.classList.remove('active-tool');
   document.getElementById('scenProg').textContent='';
   document.getElementById('chatMsgs').innerHTML='';
   setSim('READY');setStep(0);
   // Re-pulse the refresh button to guide child
-  document.getElementById('btnRefresh').classList.add('pulse-glow');
+  // btnRefresh hidden — auto-start handles dispatch
   gcMsg('zara', pick(GENERAL_GROUP_CHAT.welcome[0].msgs),600);
   gcMsg('marcus',pick(GENERAL_GROUP_CHAT.welcome[1].msgs),4000);
 }

@@ -12,13 +12,13 @@ var PERSONAS = {
 // ── GENERAL GROUP CHAT ────────────────────────────────────────
 var GENERAL_GROUP_CHAT = {
   welcome: [
-    { persona:'zara',   msgs:['Good to have another analyst on shift.','Welcome to the SOC. Glad to have the backup.','Hey — just in time. The alert queue is growing.'] },
+    { persona:'zara',   msgs:['Good to have another analyst on shift.','Welcome to the SOC. Glad to have the backup.','Hey — just in time. Cases are queued and ready.'] },
     { persona:'marcus', msgs:['Welcome. We get real incidents here, not drills.','Good timing — another case just landed.','Another analyst on deck. Let\'s go.'] },
     { persona:'priya',  msgs:['We cover encryption, network security, databases and legislation. The full range.','The incidents are modelled on real cases. Useful preparation for exams too.','Glad you\'re here. It gets busy.'] },
   ],
   between: [
-    { persona:'zara',   msgs:['Case closed. Check the inbox for the next one.','Good work. Refresh for the next alert.'] },
-    { persona:'marcus', msgs:['On to the next. Inbox is waiting.','That\'s how it\'s done. Next case incoming.'] },
+    { persona:'zara',   msgs:['Case closed. Next assignment will come through shortly.','Good work. Refresh for the next alert.'] },
+    { persona:'marcus', msgs:['On to the next. Standby for your next assignment.','That\'s how it\'s done. Next case incoming.'] },
     { persona:'priya',  msgs:['Case complete. Refresh for the next alert.','Continue — there are more incidents in the queue.'] },
   ],
   idle: [
@@ -36,9 +36,9 @@ var GLOBAL_CHAT = {
     {persona:'priya',  msgs:['Confirmed. Load and triage.','Correct.']},
   ],
   toolWrong: [
-    {persona:'zara',   msgs:['Wrong tool — re-read the email. The incident type is your clue.','Check the email again. What category of threat is this?']},
-    {persona:'marcus', msgs:['Not that one. The email tells you the incident type.','Have another look — match the tool to the incident.']},
-    {persona:'priya',  msgs:['Incorrect. The incident type in the email determines the tool.']},
+    {persona:'zara',   msgs:['Wrong tool — re-read your briefing. The incident type tells you which tool to use.','Check your briefing again. What category of incident is described?']},
+    {persona:'marcus', msgs:['Not that one. Your briefing describes the incident type — match it to the correct tool.','Have another look at your briefing — match the tool to the incident type.']},
+    {persona:'priya',  msgs:['Incorrect. The incident type in your briefing determines which tool to use.']},
   ],
   actionCorrect: [
     {persona:'marcus', msgs:['✓','Correct.','Right call.','Good read.','Spot on.','Clean.','✓ +15 XP']},
@@ -63,7 +63,7 @@ var GLOBAL_CHAT = {
     {persona:'zara',   msgs:['Not that team. Match it to the incident category.']},
   ],
   scenarioComplete: [
-    {persona:'zara',   msgs:['Good work. Next alert in the inbox.']},
+    {persona:'zara',   msgs:['Good work. Moving to the next case.']},
     {persona:'marcus', msgs:['On to the next! 📨']},
     {persona:'priya',  msgs:['Case closed. Refresh for the next incident.']},
   ],
