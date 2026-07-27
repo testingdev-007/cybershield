@@ -54,6 +54,7 @@ MODULES.packetAnalysis = {
       +'Triage each flow: some may show the attacker\'s reconnaissance. '
       +'Identifying the initial scan pattern will help us reconstruct the attack timeline and timeline gaps.\n\n'
       +'Time-sensitive — legal counsel need a preliminary report within 4 hours.\n\n'
+      +'Load the Packet Capture Analyser and review each captured flow. For each entry, assess severity and select the appropriate action.\n\n'
       +'Incident Response Lead';
   },
   diagnosticSummary:'Network traffic is broken into packets each with a header (source IP, destination IP, port, protocol) and a payload. TCP provides reliable ordered delivery via the three-way handshake SYN then SYN-ACK then ACK. UDP is connectionless and faster with no delivery guarantee. Ports identify services: 80=HTTP, 443=HTTPS, 22=SSH, 53=DNS. Firewalls filter by IP, port and protocol.',
@@ -114,8 +115,8 @@ MODULES.packetAnalysis = {
         notes:'Sequential port scan: attacker probing ports 1–1024 looking for open services. This is reconnaissance before an attack. SYN-only packets to each port in sequence is the signature. Block source and log for threat intelligence.'
       },
       {
-        name:'FLOW-A4', purpose:'ICMP flood from external source',
-        srcIP:'198.51.100.42', protocol:'ICMP', dstPort:'N/A', rate:'32,000 pkts/sec', flags:'Echo Request (type 8)',
+        name:'FLOW-A4', purpose:'Volumetric ping flood from external source',
+        srcIP:'198.51.100.42', protocol:'ICMP (ping/diagnostic)', dstPort:'N/A', rate:'32,000 pkts/sec', flags:'Echo Request (type 8)',
         ragAnswer:'R', actionAnswer:'block',
         notes:'ICMP flood (Ping flood): oversized 1,472-byte echo requests at 32,000/sec from one source. A volumetric DDoS attack designed to saturate bandwidth. ICMP at this rate has no legitimate justification.'
       },
@@ -139,8 +140,8 @@ MODULES.packetAnalysis = {
         notes:'Consistent HTTPS traffic from an IP geolocating to China. Rate is not alarming but is unusual — the company has no commercial presence in this region. May warrant geoblocking or closer inspection of exfiltrated payload volume. Monitor for data exfiltration patterns.'
       },
       {
-        name:'FLOW-B3', purpose:'SMB traffic from internal workstation',
-        srcIP:'10.0.14.52 (internal)', protocol:'TCP', dstPort:'445', rate:'850 conns/sec', flags:'SYN, ACK',
+        name:'FLOW-B3', purpose:'Internal file-share traffic from a workstation',
+        srcIP:'10.0.14.52 (internal)', protocol:'TCP', dstPort:'445 (file sharing)', rate:'850 conns/sec', flags:'SYN, ACK',
         ragAnswer:'A', actionAnswer:'monitor',
         notes:'Unusually high SMB (port 445) connection attempts originating from an internal host. Could indicate worm propagation or lateral movement following a compromise. The internal source makes this AMBER rather than RED — investigate the source host.'
       },
@@ -251,7 +252,7 @@ MODULES.encryptionAudit = {
       +'The results will determine our ICO notification obligations. '
       +'If customer passwords were stored with broken hashing, or payment data encrypted with deprecated ciphers, '
       +'that materially changes the severity of our disclosure.\n\n'
-      +'Load the Encryption Audit Tool and classify each configuration.\n\n'
+      +'Load the Encryption Audit Tool and Assess each cryptographic system in use.\n\n'
       +'CISO Support — TechCorp IR';
   },
   diagnosticSummary:'Encryption transforms data using a key. Symmetric uses one shared key such as AES. Asymmetric uses a public and private key pair such as RSA. Hashing produces a fixed-length one-way digest. MD5 and SHA-1 have known weaknesses. bcrypt is designed for password storage because it is deliberately slow. Key length in bits determines resistance to brute-force attacks.',
@@ -447,13 +448,13 @@ MODULES.sqlInjection = {
   emailSender: ()=>pick(['waf@secops.internal','appsec@infrasec.net','dba@database-ops.io','appsec-alerts@company.net']),
   emailSubject: ()=>pick(['WAF Alert: Potential SQL Injection Attempts Detected','Application Security Alert: Suspicious Database Queries','DBA Notice: Anomalous Input Detected in Application Logs','AppSec P2 Alert: SQL Metacharacters in Form Submissions']),
   emailBody(){
-    return 'Analyst,\n\nTechCorp\'s WAF flagged unusual submissions against their payment portal '
+    return 'Analyst,\n\nTechCorp\'s security monitoring flagged unusual submissions against their payment portal '
       +'in the hours before the breach was confirmed. '
       +'SQL injection against a payment application is a serious initial access vector.\n\n'
       +'If any of these payloads succeeded, it may be how the attacker got in. '
       +'Evidence of exploitation will be critical for both the technical remediation and the legal investigation — '
       +'particularly if customer payment data was accessed.\n\n'
-      +'Load the SQL Query Log Viewer and triage each entry.\n\n'
+      +'Load the SQL Query Log Viewer and Review each flagged query submission.\n\n'
       +'Application Security Lead — TechCorp IR';
   },
   diagnosticSummary:'Relational databases store data in tables with rows and columns. SQL queries retrieve and modify data. SELECT retrieves rows. WHERE filters them. INSERT INTO adds rows. UPDATE modifies rows. DELETE FROM removes rows. DROP TABLE removes the entire table. Primary keys uniquely identify rows. Foreign keys link tables. Parameterised queries separate SQL code from user input preventing injection.',
@@ -654,10 +655,10 @@ MODULES.firewallReview = {
       +'Any change that should have been rejected represents a control failure. '
       +'We need to identify exactly what was approved, what should have been escalated, '
       +'and what gave the attacker their foothold.\n\n'
-      +'Load the Firewall Rule Manager.\n\n'
+      +'Load the Firewall Rule Manager and Assess each pending rule change request.\n\n'
       +'Change Advisory Board — TechCorp IR';
   },
-  diagnosticSummary:'Firewalls filter traffic by protocol, port, direction and IP. Key ports: 22 SSH, 80 HTTP, 443 HTTPS, 3389 RDP, 3306 MySQL. Principle of least privilege means granting only minimum access needed. A DMZ places public-facing servers between internet and internal network. CIDR /32=one IP, /24=256 IPs, /0=all IPs. Implicit deny means anything not explicitly permitted is blocked.',
+  diagnosticSummary:'Firewalls examine network traffic and allow or block it based on rules set by the administrator. Rules typically specify the source, destination, direction and type of traffic. Principle of least privilege means granting only minimum access needed. A DMZ places public-facing servers between internet and internal network. CIDR /32=one IP, /24=256 IPs, /0=all IPs. Implicit deny means anything not explicitly permitted is blocked.',
   diagnosticQuestions:[
     {q:'What is a firewall\'s primary function',opts:['Filtering network traffic based on security rules','Assigning IP addresses to devices on the network','Encrypting all data that passes through it'],ok:0,hint:'Firewalls permit or deny traffic based on configurable rules — IP, port, protocol, direction.'},
     {q:'What is a network port',opts:['A physical socket on a switch or router','A logical endpoint numbered to distinguish different services','An opening in a firewall allowing all traffic'],ok:1,hint:'Port numbers route incoming traffic to the correct application — 80=HTTP, 443=HTTPS, 22=SSH.'},
@@ -858,10 +859,10 @@ MODULES.legalCompliance = {
       +'We need each incident classified correctly: criminal offences to the police under the CMA, '
       +'data protection breaches to the ICO, policy violations handled internally. '
       +'Misclassifying a criminal act as an internal matter is itself a serious liability.\n\n'
-      +'Load the Legal Reference Database.\n\n'
+      +'Load the Legal Reference Database and Classify each incident by applicable legislation.\n\n'
       +'Legal Director — TechCorp Global';
   },
-  diagnosticSummary:'Four UK Acts. Computer Misuse Act 1990 (CMA) is criminal: Section 1 unauthorised access 2 years max, Section 2 access with intent 5 years, Section 3 impairment and malware 10 years. Data Protection Act 1998 (DPA) is regulatory enforced by the ICO. CDPA 1988 covers software copyright. RIPA 2000 covers interception of communications and is criminal. CMA offences go to the police. DPA breaches go to the ICO.',
+  diagnosticSummary:'Four key UK laws. The Computer Misuse Act 1990 (CMA) creates criminal offences for unauthorised computer access and for deliberately damaging or impairing systems 5 years, Section 3 impairment and malware 10 years. Data Protection Act 1998 (DPA) is regulatory enforced by the ICO. CDPA 1988 covers software copyright. the Computer Misuse Act 1990 2000 covers interception of communications and is criminal. CMA offences go to the police. DPA breaches go to the ICO.',
   diagnosticQuestions:[
     {q:'What does CMA stand for',opts:['Computer Misuse Act','Cybercrime and Misconduct Act','Computer Management Act'],ok:0,hint:'CMA 1990 is the primary UK criminal law covering unauthorised access to computer systems.'},
     {q:'What is the ICO',opts:['The International Computing Organisation','The Information Commissioner\'s Office — UK data protection regulator','The Internet Content Oversight authority'],ok:1,hint:'The ICO is the UK\'s independent regulator for data protection — it can investigate organisations, issue enforcement notices, and impose fines for serious breaches.'},
@@ -894,8 +895,8 @@ MODULES.legalCompliance = {
   briefing: {
     title: 'Legal & Compliance Incident Review',
     tagline: 'Applying UK computing legislation to real-world security incidents',
-    summary: 'Four UK laws govern computing: the Computer Misuse Act 1990 (CMA) criminalises unauthorised computer access — S1: unauthorised access (max 2 years); S2: unauthorised access with intent for further offence (max 5 years); S3: unauthorised acts impairing computer operation, e.g. malware deployment (max 10 years). The Data Protection Act 1998 (DPA) regulates personal data processing. The Copyright Designs and Patents Act 1988 (CDPA) protects software as literary work. The Regulation of Investigatory Powers Act 2000 (RIPA) governs lawful interception of communications.',
-    watchFor: 'Unauthorised system access → CMA S1 • Unauthorised access with further intent (e.g. accessing systems to steal data) → CMA S2 • Installing malware, modifying/deleting data without authority → CMA S3 • Personal data processed without consent, shared unlawfully, or retained beyond necessity → DPA 1998 • Copying or distributing software without licence → CDPA 1988 • Intercepting communications without lawful authority → RIPA 2000',
+    summary: 'Four UK laws govern computing: the Computer Misuse Act 1990 (CMA) criminalises unauthorised computer access — S1: unauthorised access (max 2 years); S2: unauthorised access with intent for further offence (max 5 years); S3: unauthorised acts impairing computer operation, e.g. malware deployment (max 10 years). The Data Protection Act 1998 (DPA) regulates personal data processing. The Copyright Designs and Patents Act 1988 (CDPA) protects software as literary work. The Regulation of Investigatory Powers Act 2000 (the Computer Misuse Act 1990) governs lawful interception of communications.',
+    watchFor: 'Unauthorised system access → CMA S1 • Unauthorised access with further intent (e.g. accessing systems to steal data) → CMA S2 • Installing malware, modifying/deleting data without authority → CMA S3 • Personal data processed without consent, shared unlawfully, or retained beyond necessity → DPA 1998 • Copying or distributing software without licence → CDPA 1988 • Intercepting communications without lawful authority → the Computer Misuse Act 1990 2000',
     realWorld: 'The CMA 1990 has been used in prosecutions ranging from a disgruntled employee deleting company files (S3) to a researcher who accessed a company database without authorisation even to expose a vulnerability (S1 — intent is irrelevant). In 2018, Facebook was fined £500,000 (the maximum under DPA 1998) by the ICO for the Cambridge Analytica scandal — demonstrating the DPA\'s enforcement reach. GDPR (2018) superseded and extended DPA 1998 with far higher maximum fines — but the four Acts above remain the foundation of UK computing law.'
   },
 
@@ -930,7 +931,7 @@ MODULES.legalCompliance = {
         name:'INC-2025-0035', purpose:'Staff intercepted manager\'s emails via network tap',
         incident:'Staff member configured a network tap on the manager\'s VLAN segment to capture their email communications', legislation:'Regulation of Investigatory Powers Act 2000', section:'Section 1',
         ragAnswer:'R', actionAnswer:'reportPolice',
-        notes:'Unlawful interception of communications — capturing email content in transit — is an offence under RIPA 2000 S1 regardless of the network owner\'s identity. The employee had no lawful authority for interception. Report to police..'
+        notes:'Unlawful interception of communications — capturing email content in transit — is an offence under the Computer Misuse Act 1990 2000 S1 regardless of the network owner\'s identity. The employee had no lawful authority for interception. Report to police..'
       },
       // AMBER — regulatory breaches, report to ICO / legal
       {
@@ -995,14 +996,14 @@ MODULES.legalCompliance = {
       <p style="margin-bottom:8px;"><strong>${crim} criminal offence(s)</strong> (police notification required), <strong>${reg} regulatory breach(es)</strong> (ICO notification required). ${crim>0?'TechCorp must notify law enforcement immediately — delays in reporting criminal offences create additional legal exposure.':'No criminal offences confirmed in this case set, but the regulatory breaches still carry significant ICO enforcement risk.'}</p>
       <hr style="border-color:rgba(0,255,65,.15);margin:10px 0;">
       <div style="font-family:'Orbitron',monospace;font-size:10px;color:rgba(0,255,65,.5);letter-spacing:.1em;margin-bottom:6px;">📝 EXAM FOCUS: COMPUTING LEGISLATION</div>
-      <p style="font-size:12px;line-height:1.6;">Examiners test <strong>four Acts</strong>: CMA 1990 (S1 unauthorised access 2yr / S2 access with intent 5yr / S3 impairment 10yr), DPA 1998 (8 principles, ICO enforcement), CDPA 1988 (software as literary work), RIPA 2000 (interception). Scenario questions ask you to identify which Act applies — the trick is distinguishing CMA (computer access) from DPA (personal data) from RIPA (communication interception). Know all four Acts cold.</p>
+      <p style="font-size:12px;line-height:1.6;">Examiners test <strong>four Acts</strong>: CMA 1990 (S1 unauthorised access 2yr / S2 access with intent 5yr / S3 impairment 10yr), DPA 1998 (8 principles, ICO enforcement), CDPA 1988 (software as literary work), the Computer Misuse Act 1990 2000 (interception). Scenario questions ask you to identify which Act applies — the trick is distinguishing CMA (computer access) from DPA (personal data) from the Computer Misuse Act 1990 (communication interception). Know all four Acts cold.</p>
     </div>`;
   },
 
   actions:{ R:'reportPolice', A:'reportICO', G:'internal' },
   actionLabels:{ reportPolice:'🚨 NOTIFY POLICE', reportICO:'📋 REPORT TO ICO', internal:'📝 INTERNAL REVIEW' },
   ragRules:{
-    R:'Criminal offence: CMA 1990 (S1/S2/S3) or RIPA 2000 → NOTIFY POLICE',
+    R:'Criminal offence: CMA 1990 (S1/S2/S3) or the Computer Misuse Act 1990 2000 → NOTIFY POLICE',
     A:'Regulatory breach: Data Protection Act 1998 → REPORT TO ICO',
     G:'Policy/CDPA violation — no criminal element → INTERNAL REVIEW ONLY',
   },
@@ -1011,7 +1012,7 @@ MODULES.legalCompliance = {
     reportHint: 'Incidents with legal implications need the people who handle law — which team combines legal knowledge with HR?',
     analogy: 'Classifying incidents under computing law is like triage in A&E: some require immediate escalation to specialist services (police for CMA offences), some need a specific authority (ICO for data protection), and some can be dealt with by the organisation itself (internal disciplinary).',
     whatHappened: 'A range of incidents required classification across four pieces of UK legislation. The key challenge was distinguishing genuinely criminal CMA offences from regulatory DPA breaches, from internal policy matters — and recognising that good intentions (investigating a bug, learning by doing) do not override the law.',
-    keyMove: 'CMA S1: unauthorised access (max 2yr). CMA S2: unauthorised access with further intent (max 5yr). CMA S3: impairment of computer / malware (max 10yr). DPA 1998: unlawful personal data processing → ICO. RIPA 2000: unlawful interception → police. CDPA 1988: software piracy → primarily internal.',
+    keyMove: 'CMA S1: unauthorised access (max 2yr). CMA S2: unauthorised access with further intent (max 5yr). CMA S3: impairment of computer / malware (max 10yr). DPA 1998: unlawful personal data processing → ICO. the Computer Misuse Act 1990 2000: unlawful interception → police. CDPA 1988: software piracy → primarily internal.',
     realWorld: 'The ICO fined Facebook £500,000 under DPA 1998 for the Cambridge Analytica scandal — the maximum possible under that Act. GDPR (2018) raised maximum fines to €20 million or 4% of global annual turnover, whichever is higher. The CMA has been used to prosecute cases from teenage hackers to state-sponsored actors. These laws are real, routinely enforced, and directly relevant to any computing career.',
     quiz:[
       {q:'The Computer Misuse Act 1990 created three criminal offences. The most basic offence covers:',options:['Accessing a computer or data without authorisation — no damage or further intent is required','Sending large volumes of email to overwhelm a mail server','Copying commercial software for personal use without a licence'],correct:0},
@@ -1145,7 +1146,7 @@ MODULES.socialEngineering = {
       +'Identifying which contacts were part of the attack chain is critical — '
       +'it will determine whether staff disciplinary action is needed, '
       +'and whether we need to notify specific employees about potential credential compromise.\n\n'
-      +'Load the Social Engineering Alert Triage tool.\n\n'
+      +'Load the Social Engineering Alert Triage and Assess each contact attempt.\n\n'
       +'Threat Intelligence — TechCorp IR';
   },
   diagnosticSummary:'Social engineering exploits human psychology. Attack types: phishing (deceptive email), spear-phishing (targeted personalised), vishing (phone), smishing (SMS), pretexting (fabricated scenario), baiting (physical or digital lure), tailgating (physical access), BEC (executive impersonation). Psychological levers: urgency, authority, scarcity, social proof. Universal defence: verify through a separate pre-established channel.',
@@ -1205,11 +1206,13 @@ MODULES.socialEngineering = {
         ragAnswer:'R', actionAnswer:'block',
         notes:'Spear-phishing: the attacker has researched the company and used a real project name to build credibility. The sender domain (company-support.co.uk) is not the company\'s actual domain. The link leads to a credential-harvesting page. The personalisation is the attack — it makes it feel legitimate.'
       },
-      {
-        name:'SE-004', purpose:'USB drive left in company car park',
-        channel:'Physical', claimedIdentity:'Unknown (labelled Salary Review USB)', asks:'(None — employee plugged it in)', redflag:'Physical media, curiosity/self-interest lure', request:'Multiple drives found in car park. Employee plugged one in to identify the owner.',
+            {
+        name:'SE-004', purpose:'Urgent Teams message from apparent CTO requesting sensitive data',
+        channel:'Microsoft Teams', claimedIdentity:'CTO — display name and profile photo match real CTO', asks:'Client database — full Q4 client list emailed to personal Gmail account', redflag:'Personal email destination, urgency, unusual channel for data requests, no prior arrangement',
+        request:'Message: "Working from backup account today — IT issue. Need you to email Q4 client list to [personal Gmail]. Board meeting in 30 mins, very urgent." Display name and profile picture match the real CTO.',
         ragAnswer:'R', actionAnswer:'block',
-        notes:'Baiting attack: the label exploits curiosity and self-interest. Once plugged in, the drive executes a payload automatically or prompts the user to enable macros. Isolate the affected workstation immediately. Never plug unknown media into a work device — the "I just wanted to return it" instinct is the attack vector.'
+        notes:'This is impersonation via compromised or spoofed Teams account — a form of Business Email Compromise (BEC) adapted to instant messaging. Three red flags: the destination is a personal email (not a company system), urgency is used to bypass normal verification, and data exfiltration via personal accounts violates policy regardless of who is asking. Even if the CTO genuinely needed this, the correct response is to call them directly to verify before sending any data.',
+        reportTeams:{correct:'IT Security Team',incorrect:'Finance Department'},
       },
       {
         name:'SE-005', purpose:'Contractor requesting server room access without prior arrangement',
@@ -1343,7 +1346,7 @@ MODULES.malwareAnalysis = {
       +'TechCorp\'s payment processing stops entirely — 500,000 customers affected, '
       +'potential losses in the tens of thousands per hour.\n\n'
       +'Any confirmed malware means immediate host isolation. '
-      +'Load the Endpoint Security Log Viewer and work through each flagged program.\n\n'
+      +'Load the Endpoint Security Log Viewer and Review each flagged program.\n\n'
       +'Incident Response Lead — TechCorp IR';
   },
   diagnosticSummary:'Malware types: virus attaches to files and needs user action to spread. Worm self-replicates across networks without user action. Trojan is disguised as legitimate software. Ransomware encrypts files and demands payment. Keylogger captures keystrokes. Spyware exfiltrates data silently. Rootkit hides other malware. Indicators of Compromise include suspicious process paths, unexpected network connections and abnormal CPU or disk activity.',
@@ -1552,6 +1555,7 @@ MODULE_COLUMNS.socialEngineering = [
   { key:'asks',            label:'REQUESTS'     },
   { key:'redflag',         label:'RED FLAGS'    },
 ];
+// Note: students must identify attack TYPE from the data above — not shown directly.
 
 MODULE_COLUMNS.malwareAnalysis = [
   { key:'name',        label:'PROCESS'       },
@@ -1563,9 +1567,9 @@ MODULE_COLUMNS.malwareAnalysis = [
 
 // ── Action buttons for new modules ───────────────────────────
 MODULE_ACTIONS.socialEngineering = [
-  { id:'block',   label:'🚫 BLOCK & REPORT'        },
-  { id:'verify',  label:'🔍 VERIFY INDEPENDENTLY'  },
-  { id:'allow',   label:'✅ LEGITIMATE'            },
+  { id:'block',   label:'🚫 DENY & REPORT TO SECURITY' },
+  { id:'verify',  label:'🔍 VERIFY BEFORE ACTING'      },
+  { id:'allow',   label:'✅ PROCESS AS NORMAL'         },
 ];
 
 MODULE_ACTIONS.malwareAnalysis = [
@@ -1584,11 +1588,11 @@ SCENARIO_CONTEXT.packetAnalysis = {
 'FLOW-A1':"A single external IP is sending connection requests at roughly 47,000 per second. Each request begins the TCP handshake but none of them complete — no acknowledgement packets are coming back.",
 'FLOW-A2':"Small outbound DNS queries are being sent with TechCorp\'s IP as the source address, causing large DNS responses from multiple public servers to flood back into the network.",
 'FLOW-A3':"An external host is testing port numbers in ascending order — sending a brief packet to each one and moving to the next within milliseconds.",
-'FLOW-A4':"The network is receiving ICMP echo request packets from an external address at a rate far above what any diagnostic tool would generate.",
+'FLOW-A4':"The network is receiving a very high volume of ping packets from a single external address — far above what any legitimate diagnostic tool would generate.",
 'FLOW-A5':"Multiple external addresses are each starting TCP connections but never completing them — the server is allocating resources for connections that never finish their three-way handshake.",
 'FLOW-B1':"An SSH connection to an internal server was established from an IP address that appears in threat intelligence feeds as a known Tor exit node. The authentication completed successfully.",
 'FLOW-B2':"An authenticated session is active from an IP address geolocated in a country where TechCorp has no employees or offices.",
-'FLOW-B3':"An internal workstation is accessing network file shares via SMB and opening a large number of directories in a short period — including folders outside its normal business function.",
+'FLOW-B3':"An internal workstation is accessing shared network folders at a much higher rate than normal, including areas it does not typically need access to.",
 'FLOW-C1':"An internal workstation is making HTTPS requests to external IPs associated with common cloud productivity services. Traffic volume and timing match normal business-hours activity.",
 'FLOW-C2':"Internal hosts are querying a known public DNS resolver. Query types and volumes match the pattern expected during normal working hours.",
 'FLOW-C3':"UDP packets are flowing between an internal server and an external address on port 123. Packet sizes and timing intervals are consistent with clock synchronisation.",
@@ -1764,7 +1768,7 @@ SCENARIO_CONTEXT_STD.socialEngineering = {
 'SE-001':"Inbound call to IT help desk requesting account password reset. Caller unable to provide standard verification details.",
 'SE-002':"Email requesting £42,000 transfer to new supplier within 2 hours. Sender domain differs from company domain by one character.",
 'SE-003':"Email to project lead by name. References live internal project code. Attachment: updated specification document.",
-'SE-004':"USB drive in company car park. Label: Q4 Redundancy List. Placed by unknown individual previous evening.",
+'SE-004':"Teams message from CTO display name. Request: Q4 client list to personal Gmail. Deadline: 30 minutes. Account: claimed IT issue. Destination: non-company email address.",
 'SE-005':"Individual at reception claiming to be HVAC contractor. Requesting server room access. No visit record in facilities system.",
 'SE-006':"Message requesting internal IP addressing scheme details. Sender profile created 3 days ago.",
 'SE-007':"Email with Microsoft branding. Claims Azure account flagged. Requests credential re-entry via link. Deadline: 24 hours.",

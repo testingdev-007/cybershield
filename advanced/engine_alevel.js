@@ -250,7 +250,7 @@ function _boot(){
   gcMsg('marcus',pick(GENERAL_GROUP_CHAT.welcome[1].msgs),4000);
   gcMsg('priya', pick(GENERAL_GROUP_CHAT.welcome[2].msgs),8000);
   // Auto-start: dispatch first module after welcome messages settle
-  setTimeout(function(){ if(!GS.active){ refreshInbox(); } }, 10000);
+  setTimeout(function(){ if(!GS.active){ refreshInbox(); } }, 14000);
   idleLoop();
 }
 // Handles both normal <script> loading and dynamic loading via loader.js
@@ -357,7 +357,7 @@ function refreshInbox(){
   var _br=document.getElementById('btnRefresh');if(_br)_br.classList.remove('pulse-glow');
   if(GS.active){gcMsg('priya','Finish the current case before checking for new emails.');return;}
   // Reset email/results pane for fresh mission
-  document.getElementById('welcomeMsg').style.display='block';
+  if(GS.round===0){document.getElementById('welcomeMsg').style.display='block';}
   document.getElementById('emailView').style.display='none';
   showTab('E');
   clearEmailActionBar();
@@ -471,9 +471,15 @@ var _pb = {};
 function showPreBrief(mod, onComplete){
   if(!mod||!mod.diagnosticQuestions||!mod.diagnosticQuestions.length){if(onComplete)onComplete();return;}
   function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
-  _pb={pool:shuf(mod.diagnosticQuestions).slice(0,5),idx:0,score:0,onComplete:onComplete};
-  gcMsg('priya','New case incoming. Quick knowledge check first — five questions.',400);
-  setTimeout(_pbChatQ, 1400);
+  _pb={pool:shuf(mod.diagnosticQuestions).slice(0,5),idx:0,score:0,onComplete:onComplete,answered:false,shuffled:null};
+  // Step 1: Introduce the module topic before firing questions
+  var _intro=(mod.moduleIntro||mod.diagnosticSummary||'');
+  var _introShort=_intro.split(/\.\s/)[0].replace(/\.$/, '').trim();
+  if(_introShort.length>130)_introShort=_introShort.substring(0,127)+'...';
+  gcMsg('priya','Incoming case: '+(mod.name||'Unknown')+'.',400);
+  if(_introShort) gcMsg('zara',_introShort+'.',1800);
+  gcMsg('marcus','Five quick questions to check your background knowledge on this topic before your briefing.',3200);
+  setTimeout(_pbChatQ, 5000);
 }
 
 function _pbChatQ(){
@@ -642,8 +648,8 @@ function loadModule(id){
 function resetTool(){
   if(GS.gfr){cancelAnimationFrame(GS.gfr);GS.gfr=null;}
   const _gc=document.getElementById('graphCanvas'); if(_gc)_gc.style.display='none';
-  document.getElementById('toolData').innerHTML='<div class="tph">📧 Open the alert email, then select the appropriate investigation tool above and click <strong>▶ LOAD TOOL</strong>.</div>';
-  document.getElementById('toolBar').innerHTML='<span class="bhint">Read the alert email to identify the incident type, then select the matching tool.</span>';
+  document.getElementById('toolData').innerHTML='<div class="tph">📋 Read your briefing in the panel, then select the investigation tool that matches the incident type above.</div>';
+  document.getElementById('toolBar').innerHTML='<span class="bhint">Select the investigation tool that matches the incident type described in your briefing.</span>';
 }
 
 // ── INBOX ─────────────────────────────────────────────────────
@@ -667,11 +673,14 @@ function addToInbox(email){
     if(!email.phish){showEmailContent(email);setStep(2);}
   });
   list.insertBefore(el,list.firstChild);
-  // Auto-select AND auto-open email (no manual click required)
+  // Auto-select AND auto-open email — delay allows panel to render
   setTimeout(()=>{
     selectInboxEmail(email.id, email);
-    if(!email.phish){ showEmailContent(email); setStep(2); }
-  },350);
+    if(!email.phish){ showEmailContent(email); setStep(2);
+      // Tell the student what to do next
+      gcMsg('priya','Read your briefing, then select the investigation tool that matches the incident type.',600);
+    }
+  },800);
 }
 
 function selectInboxEmail(id, email){
@@ -679,20 +688,14 @@ function selectInboxEmail(id, email){
   document.querySelectorAll('.eitem').forEach(i=>i.classList.remove('sel'));
   const el=document.querySelector(`[data-eid="${id}"]`);
   if(el){el.classList.add('sel');el.classList.remove('unread');}
-  // Enable the action bar buttons
-  const btnO=document.getElementById('btnOpenEmail');
+  // Flag email button (report suspicious)
   const btnR=document.getElementById('btnFlagEmail');
-  if(btnO)btnO.disabled=false;
   if(btnR)btnR.disabled=false;
-  // Pulse the OPEN button to guide the child
-  if(btnO){btnO.classList.add('pulse-glow');setTimeout(()=>btnO.classList.remove('pulse-glow'),4000);}
 }
 
 function clearEmailActionBar(){
   GS.selectedEmailId=null;
-  const btnO=document.getElementById('btnOpenEmail');
   const btnR=document.getElementById('btnFlagEmail');
-  if(btnO){btnO.disabled=true;btnO.classList.remove('pulse-glow');}
   if(btnR)btnR.disabled=true;
 }
 
@@ -771,7 +774,7 @@ function doEmail(id,action,evt){
 
 // ── TOOL ──────────────────────────────────────────────────────
 function loadTool(){
-  if(!GS.emailOpened){gcMsg('zara','Open the alert email first — that identifies the incident type and the correct tool.');return;}
+  // Email auto-opens — no manual step needed
   const v=document.getElementById('toolSel').value;
   if(!v){gcMsg('marcus','Select an investigation tool from the dropdown above.');return;}
   if(!GS.active){toast('No scenario active','warn');return;}
