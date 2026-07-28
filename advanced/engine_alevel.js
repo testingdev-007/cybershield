@@ -252,6 +252,12 @@ function _boot(){
   // Auto-start: dispatch first module after welcome messages settle
   setTimeout(function(){ if(!GS.active){ refreshInbox(); } }, 14000);
   idleLoop();
+  // Live clock
+  (function _clock(){
+    var el=document.getElementById('liveClock');
+    if(el){var t=new Date();el.textContent=t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+' UTC';}
+    setTimeout(_clock,1000);
+  })();
 }
 // Handles both normal <script> loading and dynamic loading via loader.js
 // Boot is handled by loader_alevel.js → calls _boot() after all files load
@@ -332,6 +338,12 @@ function idleLoop(){
   setTimeout(()=>{
     if(!GS.active){const pool=[{p:'marcus',msgs:GENERAL_GROUP_CHAT.idle[0].msgs},{p:'zara',msgs:GENERAL_GROUP_CHAT.idle[1].msgs},{p:'priya',msgs:GENERAL_GROUP_CHAT.idle[2].msgs}];const e=pick(pool);gcMsg(e.p,pick(e.msgs));}
     idleLoop();
+  // Live clock
+  (function _clock(){
+    var el=document.getElementById('liveClock');
+    if(el){var t=new Date();el.textContent=t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+' UTC';}
+    setTimeout(_clock,1000);
+  })();
   },65000+Math.random()*20000);
 }
 
@@ -991,17 +1003,51 @@ function renderDebriefButton(){
 }
 
 // Opened by child clicking the debrief button — captures modId RIGHT NOW, no timer race
+function resetPanels(){
+  // Email/briefing panel — back to welcome state
+  var ev = document.getElementById('emailView');
+  var wm = document.getElementById('welcomeMsg');
+  if(ev){ ev.style.display='none'; ev.innerHTML=''; }
+  if(wm){ wm.style.display='block'; }
+  showTab('E');
+
+  // Tool panel — clear data and grid, show placeholder
+  var tg = document.getElementById('toolGrid');
+  var td = document.getElementById('toolData');
+  var tb = document.getElementById('toolBar');
+  if(tg) tg.innerHTML='';
+  if(td) td.innerHTML='<div class="tph">📋 Your next case will load shortly.</div>';
+  if(tb) tb.innerHTML='<span class="bhint">📋 Awaiting next case assignment.</span>';
+
+  // Results panel — clear
+  var rv = document.getElementById('resultsView');
+  if(rv) rv.innerHTML='';
+
+  // Step bar — reset to step 1
+  setStep(1);
+
+  // Clear email inbox item (visual)
+  var il = document.getElementById('ilist');
+  if(il) il.innerHTML='';
+
+  // Clear GS flags
+  GS.emailOpened = false;
+  GS.scenario = [];
+  clearStuckTimer();
+}
+
 function _nextCase(){
-  // Clear debrief state
   window._dbQuizAns={};
   window._dbQuizSubmitted=false;
   window._dbRouteDone=false;
   if(GS.round>=GS.totalRounds&&!GS.queue.length){
     showEndgame();return;
   }
+  // Reset all panels to clean state immediately
+  resetPanels();
   var _who=pick(['priya','zara','marcus']);
-  gcMsg(_who,'Case closed. Next assignment incoming.');
-  setTimeout(function(){ refreshInbox(); }, 1800);
+  gcMsg(_who,'Case closed. Next assignment incoming.',400);
+  setTimeout(function(){ refreshInbox(); }, 2000);
 }
 
 function openDebrief(){
@@ -1103,11 +1149,26 @@ function showResults(savedId){
       // All done — show score and NEXT CASE
       var sc=window._dbQ.score;
       var tot=window._dbQ.qs.length;
-      qSlot.innerHTML='<div class="db-quiz-result" style="margin-top:8px;">'
-        +'<div class="db-qr-score" style="color:'+(sc===tot?'var(--g)':sc>0?'var(--amb)':'var(--red)')+'">'+sc+'/'+tot+' correct</div>'
-        +(sc>0?'<div class="db-qr-xp">+'+(sc*25)+' XP</div>':'')
-        +'</div>'
-        +'<button class="db-submit" style="margin-top:12px;" onclick="_nextCase()">NEXT CASE &rarr;</button>';
+      // Record for session summary
+    if(!GS.moduleHistory)GS.moduleHistory=[];
+    GS.moduleHistory.push({
+      name:(MODULES[GS.debriefModId]||{}).name||GS.debriefModId||'Unknown',
+      correct:sc, total:tot
+    });
+    // Build the module close card
+    var isLast = (GS.round>=GS.totalRounds && !GS.queue.length);
+    var qColor = sc===tot?'var(--g)':sc>0?'var(--amb)':'var(--red)';
+    var modName = (MODULES[GS.debriefModId]||{}).name || 'CASE';
+    qSlot.innerHTML=
+      '<div class="mod-close-card">'
+      +'<div class="mcc-label">CASE CLOSED</div>'
+      +'<div class="mcc-name">'+modName+'</div>'
+      +'<div class="mcc-score" style="color:'+qColor+'">'+sc+'/'+tot+' exam questions correct</div>'
+      +(sc>0?'<div class="mcc-xp">+'+sc*25+' XP earned</div>':'')
+      +'<button class="mcc-btn" onclick="_nextCase()">'
+      +(isLast ? '📊 VIEW SESSION SUMMARY' : '▶ NEXT CASE')
+      +'</button>'
+      +'</div>';
       return;
     }
     var q=window._dbQ.qs[idx];
@@ -1261,7 +1322,49 @@ var CITIES=[];
 
 // ── ENDGAME — delegates to gamification.js ──────────────────────
 function showEndgame(){
-  showEndSplash();
+  // Build per-module performance data
+  var history = GS.moduleHistory || [];
+  var totalCorrect = 0, totalPossible = 0;
+  var modRows = '';
+  history.forEach(function(m){
+    var pct = m.total>0 ? Math.round(m.correct/m.total*100) : 0;
+    var col = pct>=70?'var(--g)':pct>=40?'var(--amb)':'var(--red)';
+    totalCorrect += m.correct; totalPossible += m.total;
+    modRows += '<div class="sum-row"><span class="sum-mod">'+m.name+'</span>'
+      +'<span class="sum-score" style="color:'+col+'">'+m.correct+'/'+m.total+' ('+pct+'%)</span></div>';
+  });
+
+  var overall = totalPossible>0 ? Math.round(totalCorrect/totalPossible*100) : 0;
+  var grade = overall>=80?'A':overall>=65?'B':overall>=50?'C':'D';
+  var gradeCol = overall>=65?'var(--g)':overall>=50?'var(--amb)':'var(--red)';
+
+  // Strengths and areas for improvement
+  var strong = history.filter(function(m){return m.total>0&&m.correct/m.total>=0.7;});
+  var improve = history.filter(function(m){return m.total>0&&m.correct/m.total<0.5;});
+
+  var html = '<div class="session-summary">'
+    +'<div class="ss-header"><div class="ss-eyebrow">SESSION COMPLETE</div>'
+    +'<div class="ss-title">ANALYST DEBRIEF</div></div>'
+    +'<div class="ss-grade-row"><div class="ss-grade" style="color:'+gradeCol+'">'+grade+'</div>'
+    +'<div class="ss-overall">'+overall+'% overall accuracy<br><span style="font-size:11px;color:var(--ink-3);">'+totalCorrect+' of '+totalPossible+' exam questions correct</span></div></div>'
+    +'<div class="ss-section-label">CASE BREAKDOWN</div>'
+    +'<div class="ss-mods">'+modRows+'</div>';
+
+  if(strong.length){
+    html += '<div class="ss-section-label" style="color:var(--g);">STRENGTHS</div>'
+      +'<div class="ss-text">'+strong.map(function(m){return m.name;}).join(' · ')+'</div>';
+  }
+  if(improve.length){
+    html += '<div class="ss-section-label" style="color:var(--amb);">AREAS FOR REVIEW</div>'
+      +'<div class="ss-text">'+improve.map(function(m){return m.name;}).join(' · ')+'</div>';
+  }
+
+  html += '<button class="mcc-btn" style="margin-top:20px;" onclick="location.reload()">↺ START NEW SESSION</button>'
+    +'</div>';
+
+  var rv = document.getElementById('resultsView');
+  if(rv){ rv.innerHTML=html; showTab('R'); }
+  gcMsg('priya','Session complete. Full debrief is in your results panel.',400);
 }
 
 function resetAll(){

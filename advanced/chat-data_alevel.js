@@ -31,14 +31,14 @@ var GENERAL_GROUP_CHAT = {
 // ── GLOBAL CHAT ───────────────────────────────────────────────
 var GLOBAL_CHAT = {
   toolCorrect: [
-    {persona:'marcus', msgs:['Right tool. ✅','Correct.','That\'s the one.','On target.']},
-    {persona:'zara',   msgs:['Good call.','Correct tool. Proceed.','That\'s it. ✓']},
-    {persona:'priya',  msgs:['Confirmed. Load and triage.','Correct.']},
+    {persona:'marcus', msgs:['That\'s the one. Get in there.','Correct — good read on the incident type.','Spot on.']},
+    {persona:'zara',   msgs:['Yep, that\'s your tool. In you go.','Correct. Work through each entry carefully.','Good call.']},
+    {persona:'priya',  msgs:['Right. Now let\'s see what we\'re dealing with.','That\'s it. Start from the top.']},
   ],
   toolWrong: [
-    {persona:'zara',   msgs:['Wrong tool — re-read your briefing. The incident type tells you which tool to use.','Check your briefing again. What category of incident is described?']},
-    {persona:'marcus', msgs:['Not that one. Your briefing describes the incident type — match it to the correct tool.','Have another look at your briefing — match the tool to the incident type.']},
-    {persona:'priya',  msgs:['Incorrect. The incident type in your briefing determines which tool to use.']},
+    {persona:'zara',   msgs:['That\'s not quite right — the briefing tells you what kind of incident this is. What does it say?','Have another look at your briefing. The incident type points you to the correct tool.']},
+    {persona:'marcus', msgs:['Not that one. Your briefing describes what happened — which tool fits that?','Re-read the briefing. What type of incident is it?']},
+    {persona:'priya',  msgs:['Wrong tool. The briefing has everything you need to figure out which one to pick.']},
   ],
   actionCorrect: [
     {persona:'marcus', msgs:['✓','Correct.','Right call.','Good read.','Spot on.','Clean.','✓ +15 XP']},
@@ -51,7 +51,7 @@ var GLOBAL_CHAT = {
     {persona:'priya',  msgs:['Wrong. What is the defining characteristic of this item?','Re-read the item — the answer is in there.']},
   ],
   allHandled: [
-    {persona:'marcus', msgs:['All items assessed. Final step: report to the right team. 📋']},
+    {persona:'marcus', msgs:['That\'s all of them. Last step — who do you escalate this to? Pick the right team.']},
     {persona:'zara',   msgs:['All handled. Who picks this up?']},
   ],
   reportCorrect: [
@@ -262,10 +262,10 @@ MODULE_GROUP_CHAT.socialEngineering = {
 MODULE_GROUP_CHAT.malwareAnalysis = {
   onLoad_1:[
     { persona:'priya',  msgs:['Endpoint security alert. For each flagged program, focus on three things: what it is doing, where it came from, and whether its network activity makes sense.','Ransomware encrypts files. Worms copy themselves to other devices. Trojans pretend to be something useful. Keyloggers capture what you type.'] },
-    { persona:'marcus', msgs:['Some of these are genuine threats. Some are legitimate programs doing their jobs. Your job is to tell them apart.'] },
+    { persona:'marcus', msgs:['Not everything flagged is malicious — some of these will be perfectly normal activity. Don\'t panic-block anything; work out what\'s actually going on.'] },
   ],
   onLoad_2:[
-    { persona:'zara',   msgs:['For each entry: what is this program actually doing? Does that match what a legitimate version of it should do? Is it sending data somewhere unexpected?'] },
+    { persona:'zara',   msgs:['What is this thing actually doing? Compare it to what you\'d expect. If it\'s sending data outbound when it shouldn\'t be — that\'s your tell.'] },
     { persona:'priya',  msgs:['Think about the malware types on the spec — ransomware, worm, trojan, virus, spyware, keylogger. What behaviour would each one show?'] },
   ],
   onStuck:[
